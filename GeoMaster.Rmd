@@ -1,0 +1,140 @@
+---
+title: "Geocoding"
+author: "DIR.TERRANCE"
+date: "7/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **OBJECTIVES**
+
+1.    Scrape for Kenyan Universities.
+2.    Categories as either public of private.
+3.    Scrape for geocodes and their meta-data datas'.
+4.    Clean the data and prepare a local data file.
+5.    Make a shinydashboard with;
+*   Summary of each university eg. when it was founded and chartered, parent institution etc,
+*   Its current Vice chancellor,
+*   How many gradutions it has conducted,
+*   Map location.
+
+#   Packages
+
+Install the following packages as we are going to use them in this project.
+
+```{r packages}
+p_required <- c("tidyverse", "ggthemes", "rvest", "ggmap","tmaptools","RCurl","jsonlite","leaflet")  
+packages <- rownames(installed.packages())
+p_to_install <- p_required[!(p_required %in% packages)]
+if (length(p_to_install) > 0) {
+    install.packages(p_to_install)
+}
+sapply(p_required, require, character.only = TRUE)
+rm(p_required, p_to_install, packages)
+```
+
+
+## Scrape for Kenyan Universities.
+
+```{r vasities, eval=T}
+
+base_url <- read_html("https://en.wikipedia.org/wiki/List_of_universities_and_colleges_in_Kenya")
+varsities_colleges <- base_url %>% 
+  html_table(.)
+
+public <- varsities_colleges[[1]] %>% 
+  select(!c(1, 8))
+
+private <- varsities_colleges[[2]] %>% 
+  filter(!c(`University name`=="2011"))
+
+other <- varsities_colleges[[3]] %>% 
+  select(c(1:4))
+
+```
+
+### Data cleaning __Phase 1__
+Clean and categorise.
+
+```{r dc_phase1, eval=T}
+public <- public %>% 
+  select(!Area)# removing redundant variable
+public$category <- "public"# create a category variable to used later
+public$`Year chartered`=as.character(public$`Year chartered`)
+public$`Year established`=as.character(public$`Year established`)
+private <- private %>% 
+  rename(c(`Year chartered`= `University status`, Name=`University name`))
+private$category <- "private"
+
+other <- other %>%
+  rename(c(Name=`Cooperative university of kenya`, `Year chartered`= `University status`)) %>% 
+  select(c(Name, `Year chartered`, `Original name`, `Year established`))
+other$category <- "other"
+
+full_base <- public %>% 
+  full_join(private, by=c("Name", "Year chartered","Original name","Year established","category" ), keep=FALSE)%>% 
+  full_join(other, by=c("Name", "Year chartered","Original name","Year established","category"))
+
+colnames(full_base) <-full_base %>% 
+  colnames() %>% 
+  str_to_lower()
+
+full_base <- full_base[-c(54),]
+```
+
+#   Scrape for geocodes and their meta-data datas'.
+
+We are going to use Google Maps( _premium_) and maybe Nominatim APIs( _free_).
+Let us now get 
+
+    + latitute and longitude
+    + address
+    + place's type and geographical boundaries
+    
+
+```{r geocode, eval=T}
+# obtain the meta datas using the geocode from ggmap package
+
+base_geos <- geocode(location = full_base$name, output = "more", source = "google")
+
+extra <- geocode(location = c("Strathmore Univerisity (Kenya)","St. Pauls Univerity(Kenya)", "Sacred Training Institute (Kenya)", "Moi University (Kenya)", "Aga Khan Univeristy(Kenya)"), output = "more", source = "google")
+base_geos[34, ] <- extra[1,]#StrathmoreUniversity
+base_geos[44, ] <- extra[2,]#st pauls University
+base_geos[56,] <- extra[3,]# sacred college
+base_geos[2,] <- extra[4,]# 
+base_geos[51,] <- extra[5,]# Aga Khan University
+
+
+
+
+full_base_geos <- cbind(full_base, base_geos)
+
+
+full_base_geos <- full_base_geos %>% 
+  select(!c(type, loctype))
+
+```
+
+
+
+#   Clean the data and prepare a local data file.
+
+```{r}
+write_csv(base_geos, "base_geos.csv")
+###perf
+
+write_csv(full_base_geos,"full_base_geos.csv")
+
+#base_geos <- read_csv("full_base_geos.csv")
+```
+
+
+
+
+
+
+
+
