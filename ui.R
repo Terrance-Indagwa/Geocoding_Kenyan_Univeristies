@@ -27,10 +27,12 @@ sidebar <- dashboardSidebar(
     menuItem("Source Code", icon = icon("file-code-o"),
              href = "https://github.com/Terrance-Indagwa/Geocoding_Kenyan_Univeristies/")
   ),
-  sidebarUserPanel(name = "Indagwa Musur Terrance",
+  sidebarUserPanel(
+    div(style="font-family:Sans-serif",
+      name = "Indagwa Musur Terrance",
                    subtitle = "Founder: Rwills Statistical Consultancy")
 )
-
+)
 body <- dashboardBody(
 
 
