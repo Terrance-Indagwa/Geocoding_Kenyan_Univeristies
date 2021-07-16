@@ -10,4 +10,4 @@ library(shinydashboard)
 full_base_geos<- read_csv("full_base_geos.csv")
 
 
-
+selectName <- unique(full_base_geos$name)

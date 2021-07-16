@@ -12,7 +12,13 @@ sidebar <- dashboardSidebar(
     menuItem(
       text = "Overview",
       tabName = "overview",
-      icon = icon("book")
+      icon = icon("book"),
+      div(class="outer",
+          tags$head(
+            #including custom js and css
+            includeCSS("geos.css"),
+            includeScript("geos.js")
+          ))
     ),
     menuItem(
       text = "Institutions geo-locations",
@@ -28,7 +34,7 @@ sidebar <- dashboardSidebar(
              href = "https://github.com/Terrance-Indagwa/Geocoding_Kenyan_Univeristies/")
   ),
   sidebarUserPanel(
-    div(style="font-family:Sans-serif",
+    tags$div(id="author",
       name = "Indagwa Musur Terrance",
                    subtitle = "Founder: Rwills Statistical Consultancy")
 )
@@ -70,7 +76,26 @@ body <- dashboardBody(
     tabItem(
       tabName = "Data",
       h2(tags$b("Data used")),
-      dataTableOutput("data")
+
+
+
+                   fluidRow(
+                 column(3,
+                        selectInput("Name", "Name", choices = selectName)
+                 ),
+
+               fluidRow(
+                 column(2,
+                        selectInput("year_chartered", "Year Chartered",choices = full_base_geos$`year chartered`, selected = full_base_geos$`year chartered`==1970)
+                 ),
+
+               hr(),
+               DT::dataTableOutput("Data")
+      ),
+
+      conditionalPanel("false", icon("crosshair"))
+    )
+
     )
   )
 )
